@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import authRoles from '../utils/authRoles.js'
+import bcrypt, { compare } from 'bcryptjs'
 
 const userSchemas = new mongoose.Schema(
     {
@@ -29,5 +30,21 @@ const userSchemas = new mongoose.Schema(
     }, { timestamps: true }
 )
 
+
+userSchemas.pre('save', async function (next) {
+    // can not use arrow function because we need to reference 'this' keyword
+    if (!this.isModified('password')) {
+        return next()
+    }
+    this.password = await bcrypt.hash(this.password, 10)
+    next()
+})
+
+userSchemas.methods = {
+    // compare Password
+    comparePassword: async function (enteredPassword) {
+        return await bcrypt.compare(enteredPassword,this.password)
+    }
+}
 
 export default mongoose.model('User', userSchemas)
